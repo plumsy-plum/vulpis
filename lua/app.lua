@@ -1,31 +1,31 @@
 UI = {
-	type = "rect",
-	x = 100,
-	y = 100,
-	w = 100,
-	h = 100,
-	color = { 255, 0, 0 },
-
+	type = "vstack",
+	padding = 5,
 	children = {
 		{
 			type = "rect",
-			x = 20,
-			y = 20,
-			w = 80,
-			h = 40,
-			color = { 0, 255, 0 },
+			w = 800,
+			h = 80,
+			margin = 10,
+			color = { 255, 0, 0 },
 		},
 		{
 			type = "rect",
-			x = 40,
-			y = 80,
-			w = 100,
-			h = 60,
-			color = { 0, 0, 255 },
+			w = 200,
+			h = 200,
+			margin = 10,
+			color = { 0, 255, 0 },
+		},
+		{
+			type = "hstack",
+			spacing = 25,
+			margin = 10,
+
+			children = {
+				{ type = "rect", w = 50, h = 50, color = { 200, 200, 0 } },
+				{ type = "rect", w = 50, h = 50, color = { 0, 200, 200 } },
+				{ type = "rect", w = 50, h = 50, color = { 200, 0, 200 } },
+			},
 		},
 	},
 }
-
-function render()
-	drawNode(UI, 0, 0)
-end
