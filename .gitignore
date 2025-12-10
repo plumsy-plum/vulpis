@@ -5,7 +5,7 @@ out/
 dist/
 Debug/
 Release/
-lua/
+src/*
 *.o
 *.obj
 *.a
