@@ -1,7 +1,22 @@
 #include "ui.h"
-#include <algorithm>
 #include <lua.h>
 #include "../color/color.h"
+
+Align parseAlign(std::string s) {
+  if (s == "center") return Align::Center;
+  if (s == "end") return Align::End;
+  if (s == "stretch") return Align::Stretch;
+  return Align::Start;
+}
+
+Justify parseJustify(std::string s) {
+  if (s == "center") return Justify::Center;
+  if (s == "end") return Justify::End;
+  if (s == "space-around") return Justify::SpaceAround;
+  if (s == "space-between") return Justify::SpaceBetween;
+  if (s == "space-evenly") return Justify::SpaceEvenly;
+  return Justify::Start;
+}
 
 Node* buildNode(lua_State* L, int idx) {
     luaL_checktype(L, idx, LUA_TTABLE);
@@ -28,10 +43,31 @@ Node* buildNode(lua_State* L, int idx) {
         return val;
     };
 
+    auto getFloat = [&](const char* key, float defaultVal) {
+      float val = defaultVal;
+      if (hasStyle) {
+        lua_getfield(L, -1, key);
+        if (lua_isnumber(L, -1)) val = (float)lua_tonumber(L, -1);
+        lua_pop(L, 1);
+      }
+      return val;
+    };
+
+    auto getString = [&](const char* key, std::string defaultVal) {
+      std::string val = defaultVal;
+      if (hasStyle) {
+        lua_getfield(L, -1, key);
+        if (lua_isstring(L, -1)) val = lua_tostring(L, -1);
+        lua_pop(L, 1);
+      }
+      return val;
+    };
+
+
     n->w = getInt("w", 0);
     n->h = getInt("h", 0);
 
-    n->spacing = getInt("spacing", 0);
+    n->spacing = getInt("gap", getInt("spacing", 0));
 
     int p = getInt("padding", 0);
 
@@ -48,6 +84,15 @@ Node* buildNode(lua_State* L, int idx) {
     n->marginBottom = getInt("marginBottom", m);
     n->marginLeft   = getInt("marginLeft", m);
     n->marginRight  = getInt("marginRight", m);
+
+    n->minHeight = getInt("minHeight", 0);
+    n->maxHeight = getInt("maxHeight", 99999);
+    n->minWidth = getInt("minWidth", 0);
+    n->maxWidth = getInt("maxWidth", 99999);
+
+    n->flexGrow = getFloat("flexGrow", 0.0f);
+    n->alignItems = parseAlign(getString("alignItems", "start"));
+    n->justifyContent = parseJustify(getString("justifyContent", "start"));
 
     if (hasStyle) {
         lua_getfield(L, -1, "BGColor");
@@ -81,81 +126,6 @@ Node* buildNode(lua_State* L, int idx) {
     lua_pop(L, 1);
 
     return n;
-}
-
-
-void measure(Node* n) {
-
-  if (n->type == "vstack") {
-    int totalH = 0;
-    int maxW = 0;
-
-    for (Node* c : n->children) {
-      measure(c);
-
-      int childH = c->h + c->marginBottom + c->marginTop;
-      int childW = c->w + c->marginLeft + c->marginRight;
-
-      totalH += childH + n->spacing;
-      maxW = std::max(maxW, childW);
-    }
-
-    if (!n->children.empty()) {
-      totalH -= n->spacing;
-    }
-
-    if (n->w == 0) n->w = maxW + n->paddingLeft + n->paddingRight;
-    if (n->h == 0) n->h = totalH + n->paddingTop + n->paddingBottom;
-  }
-  else if (n->type == "hstack") {
-    int totalW = 0;
-    int maxH = 0;
-
-    for (Node* c : n->children) {
-      measure(c);
-
-      int childH = c->h + c->marginTop + c->marginBottom;
-      int childW = c->w + c->marginLeft + c->marginRight;
-
-      totalW += childW + n->spacing;
-      maxH = std::max(maxH, childH);
-    }
-
-    if (!n->children.empty()) {
-      totalW -= n->spacing;
-    }
-
-    if (n->w == 0) n->w = totalW + n->paddingRight + n->paddingLeft;
-    if (n->h == 0) n->h = maxH + n->paddingTop + n->paddingBottom;
-  }
-}
-
-void layout(Node* n, int x, int y) {
-  n->x = x;
-  n->y = y;
-
-  if (n->type == "vstack") {
-    int cursor = y + n->paddingTop;
-
-    for (Node* c : n->children) {
-      int cx = x + n->paddingLeft + c->marginLeft;
-      int cy = cursor + c->marginTop;
-
-      layout(c, cx, cy);
-      cursor += c->h + n->spacing + c->marginTop + c->marginBottom;
-    }
-  }
-  else if (n->type == "hstack") {
-    int cursor = x + n->paddingLeft; 
-
-    for (Node* c : n->children) {
-      int cx = cursor + c->marginLeft;
-      int cy = y + n->paddingTop + c->marginTop;
-
-      layout(c, cx, cy);
-      cursor += c->w + n->spacing + c->marginRight + c->marginLeft;
-    }
-  }
 }
 
 void renderNode(SDL_Renderer* r, Node* n) {

@@ -12,6 +12,7 @@ add_executable(vulpis
   engine/main.cpp
   engine/components/ui/ui.cpp
   engine/components/color/color.cpp
+  engine/components/layout/layout.cpp
 )
 
 target_link_libraries(vulpis

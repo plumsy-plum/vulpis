@@ -10,6 +10,22 @@ extern "C" {
 #include <lualib.h>
 }
 
+enum class Justify {
+  Start,
+  End,
+  Center,
+  SpaceBetween,
+  SpaceAround,
+  SpaceEvenly
+};
+
+enum class Align {
+  Start,
+  Center,
+  End,
+  Stretch
+};
+
 struct Node {
   std::string type;
   std::vector<Node*> children;
@@ -23,13 +39,18 @@ struct Node {
   int padding = 0;
   int paddingTop = 0, paddingBottom = 0, paddingLeft = 0, paddingRight = 0;
 
+  int minWidth = 0, maxWidth = 99999;
+  int minHeight = 0, maxHeight = 99999;
+
+  float flexGrow = 0.0f;
+  Align alignItems = Align::Start;
+  Justify justifyContent = Justify::Start;
+
   SDL_Color color = {0,0,0,0};
   bool hasBackground = false;
 };
 
 Node* buildNode(lua_State* L, int idx);
-void measure(Node* n);
-void layout(Node* n, int x, int y);
 void renderNode(SDL_Renderer* r, Node* n);
 void freeTree(Node* n);
 

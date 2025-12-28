@@ -7,6 +7,7 @@
 #include <string>
 
 #include "components/ui/ui.h"
+#include "components/layout/layout.h"
 
 int main(int argc, char* argv[]) {
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -104,8 +105,8 @@ paths =
     lua_pop(L, 1);
 
     // Layout hehe
-    measure(root);
-    layout(root, 0, 0);
+    Layout::measure(root);
+    Layout::compute(root, 0, 0);
 
     // Render (render my love for tanush)
     SDL_SetRenderDrawColor(renderer ,30,30,30,255);
