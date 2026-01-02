@@ -1,5 +1,4 @@
 #pragma once
-
 #include <string>
 #include <vector>
 #include <SDL2/SDL.h>
@@ -79,8 +78,30 @@ struct Node {
   Align alignItems = Align::Start;
   Justify justifyContent = Justify::Start;
 
+  int onClickRef = -2;
+  Node* hitTest(Node* root, int x, int y);
+
   SDL_Color color = {0,0,0,0};
   bool hasBackground = false;
+
+  Node* parent = nullptr;
+  bool isLayoutDirty = true;
+  bool isPaintDirty = true;
+
+  void makeLayoutDirty() {
+    isLayoutDirty = true;
+    if (parent) {
+      parent->makeLayoutDirty();
+    }
+  }
+
+  void makePaintDirty() {
+    isLayoutDirty = true;
+    if (parent) {
+      parent->makeLayoutDirty();
+    }
+  }
+
 };
 
 
@@ -88,3 +109,4 @@ Node* buildNode(lua_State* L, int idx);
 void renderNode(SDL_Renderer* r, Node* n);
 void freeTree(Node* n);
 void resolveStyles(Node* n, int parentW, int parentH);
+void reconcile(lua_State* L, Node* current, int idx);

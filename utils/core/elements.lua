@@ -12,6 +12,23 @@ function elements.mergeStyles(base, override)
 	return res
 end
 
+function elements.mergeChildren(listA, listB)
+	local res = {}
+	if listA then
+		for _, child in ipairs(listA) do
+			table.insert(res, child)
+		end
+	end
+
+	if listB then
+		for _, child in ipairs(listB) do
+			table.insert(res, child)
+		end
+	end
+
+	return res
+end
+
 local function createStack(typeName, props)
 	props = props or {}
 
@@ -19,6 +36,7 @@ local function createStack(typeName, props)
 		type = typeName,
 		style = props.style or {},
 		children = props.children or {},
+		onClick = props.onClick,
 	}
 	return node
 end
@@ -38,6 +56,7 @@ function elements.Rect(props)
 		type = "rect",
 		style = props.style or {},
 		children = nil,
+		onClick = props.onClick,
 	}
 
 	return node
