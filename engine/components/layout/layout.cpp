@@ -3,10 +3,10 @@
 
 namespace Layout {
 
-void measure(Node* n, bool isRoot) {
+void measure(Node* n, bool isRoot, int windowWidth, int windowHeight) {
 
   for (Node* c : n->children) {
-    Layout::measure(c, false);
+    Layout::measure(c, false, windowWidth, windowHeight);
   }
 
   int contentH = 0;
@@ -41,14 +41,14 @@ void measure(Node* n, bool isRoot) {
 
   if (n->w == 0) {
     if (isRoot) {
-      n->w = 800;  // Default window width
+      n->w = windowWidth;  // Use dynamic window width
     } else {
       n->w = contentW;
     }
   }
   if (n->h == 0) {
     if (isRoot) {
-      n->h = 600;  // Default window height
+      n->h = windowHeight;  // Use dynamic window height
     } else {
       n->h = contentH;
     }

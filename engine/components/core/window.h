@@ -8,11 +8,11 @@ extern "C" {
 #include <lualib.h>
 }
 
-// Window management functions
-SDL_Window* createWindow(const char* title, int width, int height);
+//window management functions
+SDL_Window* createWindow(const char* title, int width, int height, bool maximized = false);
 void destroyWindow(SDL_Window* window);
 
-// Lua bindings
+//lua bindings
 int l_setWindowSize(lua_State* L);
 void registerWindowFunctions(lua_State* L, SDL_Window* window);
 

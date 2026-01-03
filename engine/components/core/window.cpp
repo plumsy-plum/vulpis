@@ -4,19 +4,33 @@
 //global window pointer for lua callbacks
 static SDL_Window* g_window = nullptr;
 
-SDL_Window* createWindow(const char* title, int width, int height) {
+SDL_Window* createWindow(const char* title, int width, int height, bool maximized) {
+  
+  Uint32 flags = SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI;
+  if (maximized) {
+    flags |= SDL_WINDOW_MAXIMIZED;
+  }
+  
   SDL_Window* window = SDL_CreateWindow(
     title,
     SDL_WINDOWPOS_CENTERED,
     SDL_WINDOWPOS_CENTERED,
     width,
     height,
-    SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
+    flags
   );
 
   if (!window) {
     std::cout << "Window Creation Failed: " << SDL_GetError() << std::endl;
     return nullptr;
+  }
+  
+  
+  SDL_SetWindowBordered(window, SDL_TRUE);
+  
+  
+  if (maximized) {
+    SDL_MaximizeWindow(window);
   }
 
   g_window = window;
@@ -48,7 +62,7 @@ int l_setWindowSize(lua_State* L) {
   }
 
   SDL_SetWindowSize(g_window, width, height);
-  // Recenter the window after resizing
+  //recenter the window after resizing
   SDL_SetWindowPosition(g_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
   return 0;
 }
@@ -56,7 +70,7 @@ int l_setWindowSize(lua_State* L) {
 void registerWindowFunctions(lua_State* L, SDL_Window* window) {
   g_window = window;
   
-  // Register setWindowSize as a global function
+  //register setWindowSize as a global function
   lua_register(L, "setWindowSize", l_setWindowSize);
 }
 
