@@ -19,6 +19,7 @@ add_executable(vulpis
   engine/components/layout/layout.cpp
   engine/components/state/state.cpp
   engine/components/input/input.cpp
+  engine/components/vdom/vdom.cpp
 )
 
 target_link_libraries(vulpis

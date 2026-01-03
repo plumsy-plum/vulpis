@@ -10,6 +10,7 @@
 #include "components/layout/layout.h"
 #include "components/state/state.h"
 #include "components/input/input.h"
+#include "components/vdom/vdom.h"
 
 int main(int argc, char* argv[]) {
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -148,7 +149,7 @@ paths =
           lua_pop(L, 1);
         } else {
 
-          reconcile(L, root, -1);
+          VDOM::reconcile(L, root, -1);
           lua_pop(L, 1);
         }
       }
@@ -174,7 +175,7 @@ paths =
   SDL_DestroyRenderer(renderer);
   SDL_DestroyWindow(window);
   SDL_Quit();
-  lua_close(L);
+  lua_close(L);;
   return 0;
 }
 

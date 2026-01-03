@@ -57,7 +57,9 @@ inline Length pct(float v) {
 
 struct Node {
   std::string type;
+  std::string key;
   std::vector<Node*> children;
+
 
   float x = 0, y = 0;
   float w = 0, h = 0;
@@ -110,3 +112,6 @@ void renderNode(SDL_Renderer* r, Node* n);
 void freeTree(Node* n);
 void resolveStyles(Node* n, int parentW, int parentH);
 void reconcile(lua_State* L, Node* current, int idx);
+Length getLength(lua_State* L, const char* key);
+Align parseAlign(std::string s);
+Justify parseJustify(std::string s);

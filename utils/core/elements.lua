@@ -37,6 +37,7 @@ local function createStack(typeName, props)
 		style = props.style or {},
 		children = props.children or {},
 		onClick = props.onClick,
+		key = props.key,
 	}
 	return node
 end
@@ -57,6 +58,7 @@ function elements.Rect(props)
 		style = props.style or {},
 		children = nil,
 		onClick = props.onClick,
+		key = props.key,
 	}
 
 	return node
