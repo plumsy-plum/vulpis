@@ -64,6 +64,10 @@ namespace VDOM {
       }
       ref = luaL_ref(L, LUA_REGISTRYINDEX);
     } else {
+      if (ref != -2) {
+        luaL_unref(L, LUA_REGISTRYINDEX, ref);
+        ref = -2;
+      }
       lua_pop(L, 1);
     }
   }

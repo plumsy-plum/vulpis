@@ -147,13 +147,6 @@ Node* buildNode(lua_State* L, int idx) {
 
     lua_pop(L, 1);
 
-    lua_getfield(L, idx, "onClick");
-    if (lua_isfunction(L, -1)) {
-        n->onClickRef = luaL_ref(L, LUA_REGISTRYINDEX);
-    } else {
-        lua_pop(L, 1);
-    }
-
     VDOM::updateCallback(L, idx, "onClick", n->onClickRef);
     lua_getfield(L, idx, "children");
     if (lua_istable(L, -1)) {

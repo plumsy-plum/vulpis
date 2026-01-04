@@ -26,6 +26,9 @@ namespace Input {
 
       Node* target = hitTest(root, mx, my);
 
+      // In Input::handleEvent
+      std::cout << "Click at: " << mx << "," << my << " Target: " << (target ? target->type : "None") << std::endl;
+
       while (target) {
         if (target->onClickRef != -2) {
           lua_rawgeti(L, LUA_REGISTRYINDEX, target->onClickRef);
