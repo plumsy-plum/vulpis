@@ -3,10 +3,10 @@
 
 namespace Layout {
 
-void measure(Node* n) {
+void DefaultLayoutSolver::measure(Node* n) {
 
   for (Node* c : n->children) {
-    Layout::measure(c);
+    DefaultLayoutSolver::measure(c);
   }
 
   int contentH = 0;
@@ -47,7 +47,7 @@ void measure(Node* n) {
 }
 
 
-void compute(Node* n, int x, int y) {
+void DefaultLayoutSolver::compute(Node* n, int x, int y) {
   n->x = x;
   n->y = y;
 
@@ -134,4 +134,11 @@ void compute(Node* n, int x, int y) {
     }
   }
 }
+
+void DefaultLayoutSolver::solve(Node* root, Size viewport) {
+  resolveStyles(root, viewport.w, viewport.h);
+  measure(root);
+  compute(root, 0, 0);
+}
+
 }
