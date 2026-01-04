@@ -187,6 +187,20 @@ paths =
         running = false;
       }
 
+      // Handle High DPI scaling for mouse events
+      if (event.type == SDL_MOUSEBUTTONDOWN) {
+        int renderW, renderH;
+        int windowW, windowH;
+        SDL_GetRendererOutputSize(renderer, &renderW, &renderH);
+        SDL_GetWindowSize(window, &windowW, &windowH);
+        
+        float scaleX = (float)renderW / (float)windowW;
+        float scaleY = (float)renderH / (float)windowH;
+        
+        event.button.x = (int)(event.button.x * scaleX);
+        event.button.y = (int)(event.button.y * scaleY);
+      }
+
       Input::handleEvent(L, event, root);
 
       if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_RESIZED) {

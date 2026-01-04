@@ -5,17 +5,22 @@
 namespace Input {
   Node* hitTest(Node* root, int x, int y) {
     if (!root) return nullptr;
-    if (x < root->x || x > root->x + root->w || y < root->y || y > root->y + root->h) {
+    
+    // First check if the click is within this node's bounds
+    if (x < root->x || x >= root->x + root->w || y < root->y || y >= root->y + root->h) {
       return nullptr;
     }
 
+    // Prioritize children: recursively check all children (from last to first)
+    // If any child is hit, return that child (deepest hit)
     for (int i = root->children.size() - 1; i >= 0; --i) {
-      Node* target = hitTest(root->children[i], x, y);
-      if (target) {
-        return target;
+      Node* childHit = hitTest(root->children[i], x, y);
+      if (childHit) {
+        return childHit;  // Return the deepest child that was hit
       }
     }
 
+    // Only return the parent if click is inside parent and no children were hit
     return root;
   }
 
@@ -25,9 +30,6 @@ namespace Input {
       int my = event.button.y;
 
       Node* target = hitTest(root, mx, my);
-
-      // In Input::handleEvent
-      std::cout << "Click at: " << mx << "," << my << " Target: " << (target ? target->type : "None") << std::endl;
 
       while (target) {
         if (target->onClickRef != -2) {
