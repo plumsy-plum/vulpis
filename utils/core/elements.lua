@@ -36,11 +36,20 @@ function elements.Box(props)
 		boxType = "vbox"
 	end
 	
+	-- Build node and copy through allowed props (style/children/direction handled)
 	local node = {
 		type = boxType,
 		style = props.style or {},
 		children = props.children or {},
 	}
+
+	-- Copy other props (like event handlers) onto node so engine can see them
+	for k, v in pairs(props) do
+		if k ~= "style" and k ~= "children" and k ~= "direction" then
+			node[k] = v
+		end
+	end
+
 	return node
 end
 
