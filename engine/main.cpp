@@ -66,23 +66,23 @@ paths =
       return 1;
   }
 
-  // 2. Call App()
+  
   if (lua_pcall(L, 0, 1, 0) != LUA_OK) {
       std::cerr << "Error calling App(): " << lua_tostring(L, -1) << std::endl;
       lua_pop(L, 1);
       return 1;
   }
 
-  // 3. Now the return value is on stack
+  
   if (!lua_istable(L, -1)) {
       std::cerr << "Error: App() did not return a table" << std::endl;
       lua_pop(L, 1);
       return 1;
   }
 
-  // Check for style.w and style.h in the returned table before building the node.
+  
   bool hasExplicitSize = false;
-  lua_getfield(L, -1, "style"); // pushes style (or nil)
+  lua_getfield(L, -1, "style"); 
   if (lua_istable(L, -1)) {
     lua_getfield(L, -1, "w");
     bool hasW = lua_isnumber(L, -1);
@@ -100,64 +100,87 @@ paths =
 
     hasExplicitSize = hasW && hasH;
   }
-  lua_pop(L, 1); // pop style or nil
+  lua_pop(L, 1); 
 
   Node* root = buildNode(L, -1);
   lua_pop(L, 1);
 
   
   std::string windowTitle = "Vulpis window";
-  bool hasWindowSize = false;
   bool windowResizable = false;
 
+  
   lua_getglobal(L, "Window");
-  bool hasWindowFunction = lua_isfunction(L, -1);
-  if (hasWindowFunction) {
-    if (lua_pcall(L, 0, 1, 0) != LUA_OK) {
-      std::cerr << "Error calling Window(): " << lua_tostring(L, -1) << std::endl;
-      lua_pop(L, 1);
-    } else {
-      if (lua_istable(L, -1)) {
-        lua_getfield(L, -1, "w");
-        bool hasW2 = lua_isnumber(L, -1);
-        if (hasW2) winW = (int)lua_tointeger(L, -1);
-        lua_pop(L, 1);
+  if (!lua_isfunction(L, -1)) {
+    lua_pop(L, 1);
+    std::cerr << "Error: Global 'Window' function not found in app.lua" << std::endl;
+    lua_close(L);
+    SDL_Quit();
+    return 1;
+  }
 
-        lua_getfield(L, -1, "h");
-        bool hasH2 = lua_isnumber(L, -1);
-        if (hasH2) winH = (int)lua_tointeger(L, -1);
-        lua_pop(L, 1);
+  if (lua_pcall(L, 0, 1, 0) != LUA_OK) {
+    std::cerr << "Error calling Window(): " << lua_tostring(L, -1) << std::endl;
+    lua_pop(L, 1);
+    lua_close(L);
+    SDL_Quit();
+    return 1;
+  }
 
-        hasWindowSize = hasW2 && hasH2;
-
-        lua_getfield(L, -1, "title");
-        if (lua_isstring(L, -1)) windowTitle = lua_tostring(L, -1);
-        lua_pop(L, 1);
-
-        lua_getfield(L, -1, "resizable");
-        if (lua_isboolean(L, -1)) windowResizable = lua_toboolean(L, -1);
-        lua_pop(L, 1);
-      }
-      lua_pop(L, 1); 
-    }
-  } else {
-    lua_pop(L, 1); 
+  if (!lua_istable(L, -1)) {
+    std::cerr << "Error: Window() did not return a table" << std::endl;
+    lua_pop(L, 1);
+    lua_close(L);
+    SDL_Quit();
+    return 1;
   }
 
   
-  hasExplicitSize = hasExplicitSize || hasWindowSize;
+  std::string mode;
+  lua_getfield(L, -1, "mode");
+  if (lua_isstring(L, -1)) mode = lua_tostring(L, -1);
+  lua_pop(L, 1);
 
-  
+  lua_getfield(L, -1, "title");
+  if (lua_isstring(L, -1)) windowTitle = lua_tostring(L, -1);
+  lua_pop(L, 1);
+
+  lua_getfield(L, -1, "resizable");
+  if (lua_isboolean(L, -1)) windowResizable = lua_toboolean(L, -1);
+  lua_pop(L, 1);
+
   Uint32 windowFlags = SDL_WINDOW_SHOWN;
-    if (!hasExplicitSize) {
+
+  if (mode == "full") {
     windowFlags |= SDL_WINDOW_MAXIMIZED;
-    
-    if (windowResizable) windowFlags |= SDL_WINDOW_RESIZABLE;
-    if (!hasWindowFunction) windowFlags |= SDL_WINDOW_RESIZABLE; 
+    windowFlags |= SDL_WINDOW_RESIZABLE;
+  } else if (mode == "whole screen") {
+    windowFlags = SDL_WINDOW_FULLSCREEN_DESKTOP;
   } else {
     
+    lua_getfield(L, -1, "w");
+    bool hasW2 = lua_isnumber(L, -1);
+    if (hasW2) winW = (int)lua_tointeger(L, -1);
+    lua_pop(L, 1);
+
+    lua_getfield(L, -1, "h");
+    bool hasH2 = lua_isnumber(L, -1);
+    if (hasH2) winH = (int)lua_tointeger(L, -1);
+    lua_pop(L, 1);
+
+    if (!(hasW2 && hasH2)) {
+      std::cerr << "Error: Window() must include numeric 'w' and 'h' when mode is not 'full' or 'whole screen'" << std::endl;
+      lua_pop(L, 1); 
+      lua_close(L);
+      SDL_Quit();
+      return 1;
+    }
+
     if (windowResizable) windowFlags |= SDL_WINDOW_RESIZABLE;
   }
+
+  lua_pop(L, 1); 
+
 
   window = SDL_CreateWindow(
     windowTitle.c_str(),
@@ -175,10 +198,14 @@ paths =
     return 1;
   }
 
-  // If explicit size provided, ensure the window size is set accordingly.
+  
   if (hasExplicitSize) {
     SDL_SetWindowSize(window, winW, winH);
   }
+
+  
+  SDL_GetWindowSize(window, &winW, &winH);
+
 
   renderer = SDL_CreateRenderer(
     window,
