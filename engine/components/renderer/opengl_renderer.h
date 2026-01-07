@@ -1,9 +1,15 @@
 #pragma once
+#include <glad/glad.h>
 #include "commands.h"
 #include "renderer.h"
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
-#include <SDL_video.h>
+#include <vector>
+
+struct Vertex {
+  float x, y;
+  Color color;
+};
 
 class OpenGLRenderer : public Renderer {
   public:
@@ -19,4 +25,13 @@ class OpenGLRenderer : public Renderer {
     SDL_GLContext context;
     int winWidth = 0;
     int winHeight = 0;
+
+    GLuint shaderProgram;
+    GLuint vao;
+    GLuint vbo;
+
+    std::vector<Vertex> vertices;
+    void initShaders();
+    void initBuffers();
+    void flush();
 };

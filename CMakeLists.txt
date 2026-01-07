@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(vulpis LANGUAGES CXX)
+project(vulpis LANGUAGES CXX C)
 cmake_policy(SET CMP0072 NEW)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -13,6 +13,9 @@ find_package(OpenGL REQUIRED)
 
 message(STATUS "LUA_INCLUDE_DIR = ${LUA_INCLUDE_DIR}")
 message(STATUS "LUA_LIBRARIES   = ${LUA_LIBRARIES}")
+
+add_library(glad STATIC third_party/glad/src/glad.c)
+target_include_directories(glad PUBLIC third_party/glad/include)
 
 
 set(YOGA_BUILD_SHARED OFF CACHE BOOL "" FORCE)
@@ -36,6 +39,7 @@ target_include_directories(vulpis PRIVATE
   ${SDL2_INCLUDE_DIRS}
   ${LUA_INCLUDE_DIR}
   ${CMAKE_SOURCE_DIR}/third_party/yoga
+  third_party/glad/include
 )
 
 
@@ -44,5 +48,7 @@ target_link_libraries(vulpis PRIVATE
   ${LUA_LIBRARIES}
   yogacore
   OpenGL::GL
+  glad
+  ${CMAKE_DL_LIBS}
 )
 
