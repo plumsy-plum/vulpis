@@ -86,6 +86,7 @@ paths =
   std::string mode = "";
   int w = 800;
   int h = 600;
+  bool resizable = false;
 
   lua_getfield(L, -1, "title");
   if (lua_isstring(L, -1)) title = lua_tostring(L, -1);
@@ -103,13 +104,23 @@ paths =
   if (lua_isnumber(L, -1)) h = (int)lua_tointeger(L, -1);
   lua_pop(L, 1);
 
+  lua_getfield(L, -1, "resizable");
+  if (lua_isboolean(L, -1)) resizable = lua_toboolean(L, -1);
+  lua_pop(L, 1);
+
   lua_pop(L, 1); // pop Window() return table
 
-  int windowFlags = SDL_WINDOW_OPENGL;
+  int windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI;
+
+  if (resizable) {
+    windowFlags |= SDL_WINDOW_RESIZABLE;
+  }
+
   if (mode == "full") {
-    windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_MAXIMIZED;
+    windowFlags |= SDL_WINDOW_MAXIMIZED;
+    windowFlags |= SDL_WINDOW_RESIZABLE;
   } else if (mode == "whole screen") {
-    windowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_FULLSCREEN_DESKTOP;
+    windowFlags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
   }
 
   window = SDL_CreateWindow(

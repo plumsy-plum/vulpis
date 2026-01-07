@@ -23,7 +23,9 @@ OpenGLRenderer::~OpenGLRenderer() {
 
 void OpenGLRenderer::beginFrame() {
   SDL_GetWindowSize(window, &winWidth, &winHeight);
-  glViewport(0, 0, winWidth, winHeight);
+  int drawableW, drawableH;
+  SDL_GL_GetDrawableSize(window, &drawableW, &drawableH);
+  glViewport(0, 0, drawableW, drawableH);
 
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
