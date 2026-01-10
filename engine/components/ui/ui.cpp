@@ -8,6 +8,69 @@
 #include <string>
 #include "../color/color.h"
 #include "../vdom/vdom.h"
+#include "../text/font.h"
+
+// global pointer for immediate mode
+static RenderCommandList* activeCommandList = nullptr;
+
+void UI_SetRenderCommandList(RenderCommandList* list) {
+  activeCommandList = list;
+}
+
+// garbage collection for font userdata
+int l_gc_font(lua_State* L) {
+  Font** font = (Font**)luaL_checkudata(L, 1, "FontMeta");
+  if (*font) {
+    delete *font;
+    *font = nullptr;
+  }
+  return 0;
+}
+
+// load_font
+int l_load_font(lua_State* L) {
+  const char* path = luaL_checkstring(L, 1);
+  int size = luaL_checkinteger(L, 2);
+
+  Font** font = (Font**)lua_newuserdata(L, sizeof(Font*));
+  *font = new Font(path, size);
+  
+  if (luaL_newmetatable(L, "FontMeta")) {
+    lua_pushcfunction(L, l_gc_font);
+    lua_setfield(L, -2, "__gc");
+  }
+  lua_setmetatable(L, -2);
+  return 1;
+}
+
+int l_draw_text(lua_State* L) {
+  if (!activeCommandList) {
+    return 0;
+  }
+
+  const char* str = luaL_checkstring(L, 1);
+  Font** fontPtr = (Font**)luaL_checkudata(L, 2, "FontMeta");
+  Font* font = *fontPtr;
+  float x = luaL_checknumber(L, 3);
+  float y = luaL_checknumber(L, 4);
+
+  Color color = {255, 255, 255, 255};
+  if (lua_istable(L, 5)) {
+    lua_rawgeti(L, 5, 1); color.r = luaL_optinteger(L, -1, 255); lua_pop(L, 1);
+    lua_rawgeti(L, 5, 2); color.g = luaL_optinteger(L, -1, 255); lua_pop(L, 1);
+    lua_rawgeti(L, 5, 3); color.b = luaL_optinteger(L, -1, 255); lua_pop(L, 1);
+    lua_rawgeti(L, 5, 4); color.a = luaL_optinteger(L, -1, 255); lua_pop(L, 1);
+    }
+  
+
+  activeCommandList->push(DrawTextCommand{std::string(str), font, x, y, color});
+  return 0;
+}
+
+void UI_RegisterLuaFunctions(lua_State *L) {
+  lua_register(L, "load_font", l_load_font);
+  lua_register(L, "text", l_draw_text);
+}
 
 
 Align parseAlign(std::string s) {

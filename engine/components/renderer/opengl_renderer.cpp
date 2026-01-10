@@ -1,20 +1,25 @@
 #include "opengl_renderer.h"
 #include "commands.h"
+#include <SDL_video.h>
 #include <cstddef>
 #include <iostream>
+#include <variant>
 #include <vector>
 
 const char* vertexSource = R"(
 #version 330 core
 layout (location = 0) in vec2 aPos;
-layout (location = 1) in vec4 aColor;
+layout (location = 1) in vec2 aTextCoord;
+layout (location = 2) in vec4 aColor;
 
 out vec4 fColor;
+out vec2 fTextCoord;
 uniform mat4 projection;
 
 void main() {
   gl_Position = projection * vec4(aPos, 0.0, 1.0);
   fColor = aColor;
+  fTextCoord = aTextCoord;
 }
 )";
 
@@ -22,9 +27,12 @@ const char* fragmentSource = R"(
   #version 330 core
   out vec4 FragColor;
   in vec4 fColor;
+  in vec2 fTextCoord;
+
+  uniform sampler2D texSampler;
 
   void main() {
-    FragColor = fColor;
+      FragColor = fColor * texture(texSampler, fTextCoord);
   }
 )";
 
@@ -45,13 +53,22 @@ OpenGLRenderer::OpenGLRenderer(SDL_Window* win) : window(win) {
   glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
   initShaders();
   initBuffers();
+
+  glGenTextures(1, &whiteTexture);
+  glBindTexture(GL_TEXTURE_2D, whiteTexture);
+  unsigned char whitePixel[] = { 255, 255, 255, 255 };
+  glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, whitePixel);
+
+  currentTextureID = whiteTexture;
 }
 
 OpenGLRenderer::~OpenGLRenderer() {
   glDeleteVertexArrays(1, &vao);
   glDeleteBuffers(1, &vbo);
   glDeleteProgram(shaderProgram);
+  glDeleteTextures(1, &whiteTexture);
   SDL_GL_DeleteContext(context);
+
 }
 
 void OpenGLRenderer::initShaders() {
@@ -75,17 +92,21 @@ void OpenGLRenderer::initShaders() {
 }
 
 void OpenGLRenderer::initBuffers() {
+
   glGenVertexArrays(1, &vao);
   glGenBuffers(1, &vbo);
 
   glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
-  glEnableVertexAttribArray(0);
+  glEnableVertexAttribArray(0); // pos
   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE ,sizeof(Vertex), (void*)offsetof(Vertex, x));
 
-  glEnableVertexAttribArray(1);
-  glVertexAttribPointer(1, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, color));
+  glEnableVertexAttribArray(1); // UV
+  glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, u));
+
+  glEnableVertexAttribArray(2); // Color
+  glVertexAttribPointer(2, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(Vertex), (void*)offsetof(Vertex, color));
 
   glBindVertexArray(0);
 }
@@ -115,6 +136,8 @@ void OpenGLRenderer::beginFrame() {
   glUniformMatrix4fv(projLoc, 1, GL_FALSE, ortho);
 
   vertices.clear();
+  currentTextureID = whiteTexture;
+  glBindTexture(GL_TEXTURE_2D, currentTextureID);
 }
 
 void OpenGLRenderer::endFrame() {
@@ -124,12 +147,13 @@ void OpenGLRenderer::endFrame() {
 
 void OpenGLRenderer::flush() {
   if (vertices.empty()) return;
+
+  glBindTexture(GL_TEXTURE_2D, currentTextureID);
   
   glBindVertexArray(vao);
   glBindBuffer(GL_ARRAY_BUFFER, vbo);
 
   glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_DYNAMIC_DRAW);
-
   glDrawArrays(GL_TRIANGLES, 0, vertices.size());
 
   glBindVertexArray(0);
@@ -139,6 +163,12 @@ void OpenGLRenderer::flush() {
 void OpenGLRenderer::submit(const RenderCommandList& list) {
   for (const auto& cmd : list.commands) {
     if (std::holds_alternative<DrawRectCommand>(cmd)) {
+
+      if (currentTextureID != whiteTexture) {
+        flush();
+        currentTextureID = whiteTexture;
+      }
+
       const auto& data = std::get<DrawRectCommand>(cmd);
       float x = data.rect.x;
       float y = data.rect.y;
@@ -147,15 +177,52 @@ void OpenGLRenderer::submit(const RenderCommandList& list) {
       Color c = data.color;
 
       // triangle 1
-      vertices.push_back({x, y, c});
-      vertices.push_back({x + w, y, c});
-      vertices.push_back({x + w, y + h, c});
+      vertices.push_back({x, y, 0.0f, 0.0f, c});
+      vertices.push_back({x + w, y, 0.0f, 0.0f ,c});
+      vertices.push_back({x + w, y + h, 0.0f, 0.0f, c});
 
       // triangle 2
-      vertices.push_back({x, y, c});
-      vertices.push_back({x, y + h, c});
-      vertices.push_back({x + w, y + h, c});
+      vertices.push_back({x, y, 0.0f, 0.0f, c});
+      vertices.push_back({x, y + h, 0.0f, 0.0f, c});
+      vertices.push_back({x + w, y + h, 0.0f, 0.0f, c});
     }
+
+    else if (std::holds_alternative<DrawTextCommand>(cmd)) {
+      const auto& data = std::get<DrawTextCommand>(cmd);
+      GLuint fontTex = data.font->GetTextureID();
+
+      if (currentTextureID != fontTex) {
+        flush();
+        currentTextureID = fontTex;
+      }
+
+      float cursorX = data.x;
+      float cursorY = data.y;
+
+      for (char c : data.text) {
+        const Character& ch = data.font->GetCharacter(c);
+
+        float xpos = cursorX + ch.BearingX;
+        float ypos = cursorY + (ch.SizeY - ch.BearingY);
+        float w = (float)ch.SizeX;
+        float h = (float)ch.SizeY;
+
+        // triangle 1
+        vertices.push_back({ xpos + w, ypos, ch.uMax, ch.vMax, data.color });
+        vertices.push_back({ xpos + w, ypos - h, ch.uMax, ch.vMin, data.color });
+        vertices.push_back({ xpos, ypos - h, ch.uMin, ch.vMin, data.color});
+
+        // triangle 2
+        vertices.push_back({ xpos, ypos - h, ch.uMin, ch.vMin, data.color });
+        vertices.push_back({ xpos, ypos, ch.uMin, ch.vMax, data.color });
+        vertices.push_back({ xpos + w, ypos, ch.uMax, ch.vMax, data.color });
+
+        // freetype stores advance values as 26.6 fixed point, meaning the value is scaled by 64, we divide by 64 to get pixels.
+        // this is just a faster way to divide by 64
+        cursorX += (ch.Advance >> 6);
+      }
+    }
+
 
     else if (std::holds_alternative<PushClipCommand>(cmd)) {
       flush();

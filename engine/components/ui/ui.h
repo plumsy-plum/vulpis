@@ -118,3 +118,7 @@ void reconcile(lua_State* L, Node* current, int idx);
 Length getLength(lua_State* L, const char* key);
 Align parseAlign(std::string s);
 Justify parseJustify(std::string s);
+
+void UI_RegisterLuaFunctions(lua_State* L);
+void UI_SetRenderCommandList(RenderCommandList* list);
+

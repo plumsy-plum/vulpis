@@ -8,6 +8,7 @@
 
 struct Vertex {
   float x, y;
+  float u, v;
   Color color;
 };
 
@@ -29,6 +30,9 @@ class OpenGLRenderer : public Renderer {
     GLuint shaderProgram;
     GLuint vao;
     GLuint vbo;
+
+    GLuint whiteTexture;
+    GLuint currentTextureID;
 
     std::vector<Vertex> vertices;
     void initShaders();

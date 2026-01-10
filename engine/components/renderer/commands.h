@@ -2,6 +2,8 @@
 #include <variant>
 #include <vector>
 #include <cstdint>
+#include "../color/color.h"
+#include "../text/font.h"
 
 struct Color {
   uint8_t r, g, b, a;
@@ -9,6 +11,13 @@ struct Color {
 
 struct Rect {
   float x, y, w, h;
+};
+
+struct DrawTextCommand {
+  std::string text;
+  Font* font;
+  float x, y;
+  Color color;
 };
 
 struct DrawRectCommand {
@@ -24,7 +33,7 @@ struct PopClipCommand {
 
 };
 
-using RenderCommand = std::variant<DrawRectCommand, PushClipCommand, PopClipCommand>;
+using RenderCommand = std::variant<DrawRectCommand, PushClipCommand, PopClipCommand, DrawTextCommand>;
 
 struct RenderCommandList {
   std::vector<RenderCommand> commands;

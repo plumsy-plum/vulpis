@@ -13,6 +13,8 @@
 #include "components/state/state.h"
 #include "components/input/input.h"
 #include "components/vdom/vdom.h"
+#include "components/text/font.h"
+
 
 int main(int argc, char* argv[]) {
   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -34,6 +36,7 @@ int main(int argc, char* argv[]) {
   lua_State* L = luaL_newstate();
   luaL_openlibs(L);
   registerStateBindings(L);
+  UI_RegisterLuaFunctions(L);
 
   lua_getglobal(L, "package");
   lua_getfield(L, -1, "path");
@@ -98,7 +101,8 @@ paths =
   lua_pop(L, 1);
 
   lua_getfield(L, -1, "w");
-  if (lua_isnumber(L, -1)) w = (int)lua_tointeger(L, -1);
+
+  if (lua_isnumber(L, -1)) w = (int)lua_tointeger(L, -1);;
   lua_pop(L, 1);
 
   lua_getfield(L, -1, "h");
@@ -218,6 +222,20 @@ paths =
     renderer.beginFrame();
     RenderCommandList cmdList;
     generateRenderCommands(root, cmdList);
+    UI_SetRenderCommandList(&cmdList);
+
+    lua_getglobal(L, "on_render");
+    if (lua_isfunction(L, -1)) {
+      if (lua_pcall(L, 0, 0, 0) != LUA_OK) {
+        std::cout << "Error in on_render: " << lua_tostring(L, -1) << std::endl;
+        lua_pop(L, 1);
+      }
+    } else {
+      lua_pop(L, 1);
+    }
+
+    UI_SetRenderCommandList(nullptr);
+
     renderer.submit(cmdList);
     renderer.endFrame();
   }

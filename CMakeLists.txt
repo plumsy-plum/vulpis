@@ -10,9 +10,11 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 find_package(SDL2 REQUIRED)
 find_package(Lua REQUIRED)
 find_package(OpenGL REQUIRED)
+find_package(Freetype REQUIRED) 
 
 message(STATUS "LUA_INCLUDE_DIR = ${LUA_INCLUDE_DIR}")
 message(STATUS "LUA_LIBRARIES   = ${LUA_LIBRARIES}")
+message(STATUS "FreeType Include: ${FREETYPE_INCLUDE_DIRS}")
 
 add_library(glad STATIC third_party/glad/src/glad.c)
 target_include_directories(glad PUBLIC third_party/glad/include)
@@ -32,6 +34,7 @@ add_executable(vulpis
   engine/components/input/input.cpp
   engine/components/vdom/vdom.cpp
   engine/components/renderer/opengl_renderer.cpp
+  engine/components/text/font.cpp
 )
 
 
@@ -40,6 +43,7 @@ target_include_directories(vulpis PRIVATE
   ${LUA_INCLUDE_DIR}
   ${CMAKE_SOURCE_DIR}/third_party/yoga
   third_party/glad/include
+  ${FREETYPE_INCLUDE_DIRS}
 )
 
 
@@ -50,5 +54,6 @@ target_link_libraries(vulpis PRIVATE
   OpenGL::GL
   glad
   ${CMAKE_DL_LIBS}
+  ${FREETYPE_LIBRARIES}
 )
 
