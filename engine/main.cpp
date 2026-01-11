@@ -8,6 +8,7 @@
 
 #include "components/renderer/commands.h"
 #include "components/renderer/opengl_renderer.h"
+#include "components/text/font.h"
 #include "components/ui/ui.h"
 #include "components/layout/layout.h"
 #include "components/state/state.h"
@@ -240,7 +241,8 @@ paths =
     renderer.submit(cmdList);
     renderer.endFrame();
   }
-
+  
+  UI_ShutdownFonts();
   freeTree(L, root);
   SDL_DestroyWindow(window);
   SDL_Quit();

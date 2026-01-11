@@ -2,8 +2,21 @@
 #include <algorithm>
 #include <iostream>
 #include <ft2build.h>
+#include <lauxlib.h>
+#include <memory>
 #include <ostream>
+#include "../ui/ui.h"
 #include FT_FREETYPE_H
+
+
+static std::unordered_map<int, std::unique_ptr<Font>> g_fonts;
+static int g_nextFontId = 1;
+
+Font* UI_GetFontById(int id) {
+  auto it = g_fonts.find(id);
+  if (it == g_fonts.end()) return nullptr;
+  return it->second.get();
+}
 
 Font::Font(const std::string& fontPath, unsigned int fontSize) {
   Load(fontPath, fontSize);
@@ -103,3 +116,64 @@ const Character& Font::GetCharacter(char c) const {
   }
   return characters.at(c);
 }
+
+
+int l_load_font(lua_State* L) {
+  const GLubyte* ver = glGetString(GL_VERSION);
+  if (!ver) {
+    return luaL_error(L, "load_font() called before OpenGL context is ready");
+  }
+
+  const char* path = luaL_checkstring(L, 1);
+  int size = luaL_checkinteger(L, 2);
+
+  int id = g_nextFontId++;
+  g_fonts[id] = std::make_unique<Font>(path, size);
+
+  FontHandle* h = (FontHandle*)lua_newuserdata(L, sizeof(FontHandle));
+  h->id = id;
+
+  luaL_getmetatable(L, "FontMeta");
+  lua_setmetatable(L, -2);
+  return 1;
+}
+
+int l_draw_text(lua_State* L) {
+  if (!activeCommandList) {
+    return 0;
+  }
+
+  const char* str = luaL_checkstring(L, 1);
+  FontHandle* h = (FontHandle*)luaL_checkudata(L, 2, "FontMeta");
+  if (!h) {
+    std::cerr << "ERROR: font not loaded\n";
+    return 0;
+  }
+
+  Font* font = UI_GetFontById(h->id);
+  if (!font) {
+    std::cerr << "ERROR: font id" << h->id << " no found\n";
+    return 0;
+  }
+
+  float x = luaL_checknumber(L, 3);
+  float y = luaL_checknumber(L, 4);
+
+  Color color = {255, 255, 255, 255};
+  if (lua_istable(L, 5)) {
+    lua_rawgeti(L, 5, 1); color.r = luaL_optinteger(L, -1, 255); lua_pop(L, 1);
+    lua_rawgeti(L, 5, 2); color.g = luaL_optinteger(L, -1, 255); lua_pop(L, 1);
+    lua_rawgeti(L, 5, 3); color.b = luaL_optinteger(L, -1, 255); lua_pop(L, 1);
+    lua_rawgeti(L, 5, 4); color.a = luaL_optinteger(L, -1, 255); lua_pop(L, 1);
+  }
+
+  activeCommandList->push(DrawTextCommand{std::string(str), font, x, y, color});
+  return 0;
+}
+
+
+void UI_ShutdownFonts() {
+  g_fonts.clear();
+  g_nextFontId = 1;
+}
+

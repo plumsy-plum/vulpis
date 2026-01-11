@@ -2,6 +2,9 @@
 #include <string>
 #include <map>
 #include <glad/glad.h>
+#include <unordered_map>
+#include <memory>
+#include "../../lua.hpp"
 
 struct Character {
   unsigned int TextureID;
@@ -29,4 +32,19 @@ class Font {
     std::map<char, Character> characters;
     void Load(const std::string& path, unsigned int size);
 };
+
+
+
+struct FontHandle {
+  int id;
+};
+
+Font* UI_GetFontById(int id);
+
+
+
+void UI_ShutdownFonts();
+
+int l_load_font(lua_State* L);
+int l_draw_text(lua_State* L);
 

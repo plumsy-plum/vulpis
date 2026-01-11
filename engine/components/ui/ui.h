@@ -63,6 +63,7 @@ struct Node {
   std::vector<Node*> children;
 
   std::string text;
+  int fontId = 0;
   Font* font = nullptr;
   Color textColor = {255, 255, 255, 255};
 
@@ -141,3 +142,9 @@ Justify parseJustify(std::string s);
 void UI_RegisterLuaFunctions(lua_State* L);
 void UI_SetRenderCommandList(RenderCommandList* list);
 void updateTextLayout(Node* root);
+
+
+
+static RenderCommandList* activeCommandList = nullptr;
+
+void UI_SetRenderCommandList(RenderCommandList* list);
