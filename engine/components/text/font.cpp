@@ -9,6 +9,7 @@
 #include "../ui/ui.h"
 #include FT_FREETYPE_H
 
+#include "../system/pathUtils.h"
 
 static std::unordered_map<int, std::unique_ptr<Font>> g_fonts;
 static int g_nextFontId = 1;
@@ -46,6 +47,15 @@ Font::~Font() {
 }
 
 void Font::Load(const std::string& path, unsigned int size) {
+
+  std::string fullpath = Vulpis::getAssetPath(path);
+  if (!std::filesystem::exists(fullpath)) {
+    std::cerr << "!!! FATAL ERROR !!!" << std::endl;
+    std::cerr << "Asset missing at: " << fullpath << std::endl;
+    std::cerr << "Current Working Dir: " << std::filesystem::current_path() << std::endl;
+    return;
+  }
+
   FT_Library ft;
   if (FT_Init_FreeType(&ft)) {
     std::cerr << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
@@ -53,8 +63,8 @@ void Font::Load(const std::string& path, unsigned int size) {
   }
 
   FT_Face face;
-  if (FT_New_Face(ft, path.c_str(), 0, &face)) {
-    std::cerr << "ERROR::FREETYPE: Failed to load font: " << path << std::endl;
+  if (FT_New_Face(ft, fullpath.c_str(), 0, &face)) {
+    std::cerr << "ERROR::FREETYPE: Failed to load font: " << fullpath << std::endl;
     FT_Done_FreeType(ft);
     return;
   }
@@ -99,16 +109,16 @@ void Font::Load(const std::string& path, unsigned int size) {
     }
 
     glTexSubImage2D(
-      GL_TEXTURE_2D,
-      0,
-      x,
-      y,
-      face->glyph->bitmap.width,
-      face->glyph->bitmap.rows,
-      GL_RED,
-      GL_UNSIGNED_BYTE,
-      face->glyph->bitmap.buffer
-    );
+        GL_TEXTURE_2D,
+        0,
+        x,
+        y,
+        face->glyph->bitmap.width,
+        face->glyph->bitmap.rows,
+        GL_RED,
+        GL_UNSIGNED_BYTE,
+        face->glyph->bitmap.buffer
+        );
 
     Character character = {
       textureID,
@@ -124,16 +134,26 @@ void Font::Load(const std::string& path, unsigned int size) {
     x += face->glyph->bitmap.width + 1;
     rowHeight = std::max(rowHeight, (int)face->glyph->bitmap.rows);
   }
-  
+
   FT_Done_Face(face);
   FT_Done_FreeType(ft);
 }
 
 const Character& Font::GetCharacter(char c) const {
-  if (characters.find(c) == characters.end()) {
-    return characters.at('?');
+
+  auto it = characters.find(c);
+  if (it != characters.end()) {
+    return it->second;
   }
-  return characters.at(c);
+
+  auto fallback = characters.find('?');
+  if (fallback != characters.end()) {
+    return fallback->second;
+  }
+
+  static Character emergency = {};
+  return emergency;
+
 }
 
 

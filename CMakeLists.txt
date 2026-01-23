@@ -33,6 +33,7 @@ add_executable(vulpis
   engine/components/vdom/vdom.cpp
   engine/components/renderer/opengl_renderer.cpp
   engine/components/text/font.cpp
+  engine/components/system/pathUtils.cpp
 )
 
 target_link_libraries(vulpis PRIVATE
@@ -52,3 +53,12 @@ target_include_directories(vulpis PRIVATE
   third_party/glad/include
   ${LUA_INCLUDE_DIR}
 )
+
+add_custom_command(TARGET vulpis POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E create_symlink 
+    ${CMAKE_SOURCE_DIR}/src/assets
+    ${CMAKE_BINARY_DIR}/assets
+    COMMENT "Connecting assets folder to the build directory"
+)
+
+
