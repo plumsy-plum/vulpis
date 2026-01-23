@@ -4,7 +4,12 @@ import os
 import sys
 import platform
 import subprocess
-import ctypes
+
+try:
+    import ctypes
+    import winreg
+except ImportError:
+    pass
 
 SCRIPT_NAME = "vulcli.py"
 COMMAND_NAME = "vulcli"
@@ -12,7 +17,7 @@ COMMAND_NAME = "vulcli"
 def is_admin():
     # check if script has admin priviledges.
     try:
-        if platform.system() == "Window":
+        if platform.system() == "Windows":
             if hasattr(ctypes, 'windll'):
                 return ctypes.windll.shell32.IsUserAnAdmin()
             return False
@@ -74,27 +79,41 @@ def install_windows():
         with open(bat_path, "w") as f:
             f.write('@echo off\n')
             f.write(f'python "{src}" %*\n')
-        print(f" Wrapper created: {bat_path}")
+        print(f"Wrapper created: {bat_path}")
     except Exception as e:
-        print(f"   ❌ Failed to create batch file: {e}")
+        print(f"Failed to create batch file: {e}")
         return
 
-    current_path = os.environ["PATH"]
-    if script_dir in current_path:
-        print("Directory is already in PATH.\n")
-        print(f"Installation complete! You can type '{COMMAND_NAME}' anywhere\n")
-    else:
-        print("Directory not in PATH")
-        print("Attempting to add it now")
-
+    print("... Updating User Path in Registry ...")
+    try:
+        key = winreg.OpenKey(
+            winreg.HKEY_CURRENT_USER,
+            "Environment",
+            0,
+            winreg.KEY_ALL_ACCESS
+        )
         try:
-            subprocess.run(f'setx PATH "%PATH%;{script_dir}"', shell=True, check=True)
-            print("Added to PATH.\n")
-            print("Installation complete!\n")
-            print("NOTE: You must RESTART your terminal (CMD/PowerShell) for changes to take effect.\n")
-        except Exception as e:
-            print(f"Failed to set PATH {e}")
-            print("You may need to add this folder to your PATH manually.")
+            current_path, _ = winreg.QueryValueEx(key, "path")
+        except FileNotFoundError:
+            current_path = ""
+
+        if script_dir.lower() in current_path.lower():
+            print("Directory is already in PATH.")
+        else:
+            new_path = current_path
+            if new_path and not new_path.endswith(";"):
+                new_path += ";"
+            new_path += script_dir
+
+            winreg.SetValueEx(key, "Path", 0, winreg.REG_EXPAND_SZ, new_path)
+            print("Added to PATH successfully.")
+            print("IMPORTANT: Close and Reopen your terminal to use the command.")
+
+        winreg.CloseKey(key)
+
+    except Exception as e:
+        print(f"Failed to update Registry: {e}")
+        print(" You may need to add the folder to your PATH manually.")
 
 
 def main():
@@ -103,7 +122,7 @@ def main():
 
     if os_type == "Linux" or os_type == "Darwin":
         install_unix()
-    elif os_type == "Window":
+    elif os_type == "Windows":
         install_windows()
     else:
         print(f"Unsupported OS: {os_type}")
@@ -111,16 +130,5 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
-
 
 

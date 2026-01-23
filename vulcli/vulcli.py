@@ -69,6 +69,9 @@ def clean(root_dir):
 def build(root_dir):
     build_dir = os.path.join(root_dir, "build")
     print(f"--- Building Vulpis Project in {os.getcwd()}")
+
+    check_vcpkg(root_dir)
+
     if not os.path.exists(build_dir):
         os.makedirs(build_dir)
     try:
@@ -117,7 +120,7 @@ def check_vcpkg(root_dir):
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: vulcli [init | build | run]")
+        print("Usage: vulcli [init | build | run | vcpkg]")
         sys.exit(1)
 
     cmd = sys.argv[1]
