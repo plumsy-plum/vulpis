@@ -148,7 +148,12 @@ def check_vcpkg(root_dir):
         print("--- 🛠️  Bootstrapping vcpkg (First run only) ---")
         script_name = "bootstrap-vcpkg.bat" if platform.system() == "Windows" else "./bootstrap-vcpkg.sh"
 
-        subprocess.run([script_name], cwd=vcpkg_dir, shell=True, check=True)
+        if platform.system() == "Windows":
+            subprocess.run([script_name], cwd=vcpkg_dir, shell=True, check=True)
+        else:
+            script_path = os.path.join(vcpkg_dir, script_name)
+            os.chmod(script_path, 0o755)
+            subprocess.run([script_path], cwd=vcpkg_dir, shell=False, check=True)
     print("--- vcpkg is ready ---")
 
 if __name__ == "__main__":

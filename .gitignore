@@ -20,6 +20,7 @@ src/*
 *.dll
 *.dylib
 *.exe
+*.bat
 
 
 CMakeCache.txt
