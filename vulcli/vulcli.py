@@ -72,10 +72,43 @@ def build(root_dir):
 
     check_vcpkg(root_dir)
 
+    system_os = platform.system()
+    
+    # 1. Select the correct preset based on the OS
+    if system_os == "Windows":
+        preset_name = "windows-default"
+    elif system_os == "Darwin":
+        preset_name = "mac-default"
+    else:
+        preset_name = "linux-default"
+    
+    print(f"--- Detected {system_os}, using preset: {preset_name} ---")
+
+    # 2. AUTOMATION: Load MSVC Environment if on Windows and compiler is missing
+    if system_os == "Windows" and shutil.which("cl") is None:
+        print("--- MSVC Compiler not found in PATH. Attempting to load environment... ---")
+        vcvars_paths = [
+            r"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvarsall.bat",
+            r"C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat",
+            r"C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Auxiliary\Build\vcvarsall.bat"
+        ]
+        
+        found_vcvars = next((p for p in vcvars_paths if os.path.exists(p)), None)
+        
+        if found_vcvars:
+            # Note: We use the detected preset_name here as well
+            cmd = f'"{found_vcvars}" x64 && cmake --preset {preset_name} && cmake --build build'
+            subprocess.run(cmd, shell=True, cwd=root_dir, check=True)
+            return 
+        else:
+            print("Error: Visual Studio Build Tools not found. Please install 'Desktop development with C++'.")
+            sys.exit(1)
+
+    # 3. Standard Build Process (macOS, Linux, or Windows with compiler already in PATH)
     if not os.path.exists(build_dir):
         os.makedirs(build_dir)
     try:
-        subprocess.run(["cmake", "--preset", "default"], cwd=root_dir ,check=True)
+        subprocess.run(["cmake", "--preset", preset_name], cwd=root_dir, check=True)
         subprocess.run(["cmake", "--build", "build"], cwd=root_dir, check=True)
     except subprocess.CalledProcessError:
         print("--- Build Failed ---")

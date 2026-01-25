@@ -65,10 +65,9 @@ target_include_directories(vulpis PRIVATE
 )
 
 add_custom_command(TARGET vulpis POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/src/assets
     COMMAND ${CMAKE_COMMAND} -E create_symlink 
-    ${CMAKE_SOURCE_DIR}/src/assets
-    ${CMAKE_BINARY_DIR}/assets
-    COMMENT "Connecting assets folder to the build directory"
+            ${CMAKE_SOURCE_DIR}/src/assets
+            ${CMAKE_BINARY_DIR}/assets
+    COMMENT "Linking assets to the build directory"
 )
-
-

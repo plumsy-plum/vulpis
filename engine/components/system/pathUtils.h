@@ -1,7 +1,8 @@
 #pragma once
 #include <string>
 #include <filesystem>
-#include <linux/limits.h>
+#include <climits>
+#include <limits>
 #include <string>
 #include <iostream>
 #include <sys/types.h>
