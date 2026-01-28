@@ -1,10 +1,5 @@
 #pragma once
-#ifdef _WIN32
-    // Windows does not have endian.h; SDL provides these macros
-    #include <SDL_endian.h>
-#else
-    #include <endian.h>
-#endif
+#include <SDL2/SDL_endian.h> // Works on Windows, Linux, and Mac
 #include <string>
 #include <unordered_map>
 #include <variant>
